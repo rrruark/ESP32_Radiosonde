@@ -18,12 +18,22 @@
 #define LED2 13
 #define radio_DIO2_AS_RF_SWITCH 1
 
-//I2C Bus
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+//ADC I2C Bus
+#define SDA_0 21
+#define SCL_0 22
+
+//Display I2C Bus
 #define SDA_1 4
 #define SCL_1 15
 
-//TwoWire I2C_0 = TwoWire(0);
+TwoWire I2C_0 = TwoWire(0);
 TwoWire I2C_1 = TwoWire(1);
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &I2C_1, -1);
+
 //bmp280
 Adafruit_BMP280 bmp(&I2C_1);
 // SHT40 sensor
@@ -77,7 +87,23 @@ void setup()
   Serial2.begin(9600, SERIAL_8N1, 16, 17);
 
   //init I2C
+  I2C_0.begin(SDA_0, SCL_0, 100000);
   I2C_1.begin(SDA_1, SCL_1, 100000);
+
+    //OLED Stuff
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) 
+  { // Address 0x3D for 128x64
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;);
+  }
+  delay(500);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 0);
+  // Display static text
+  display.println("Power Test Tool");
+  display.display(); 
 
   // Initialize SHT40 sensor
   if (!sht40.begin(&I2C_1)) {
@@ -107,7 +133,7 @@ void loop()
   read_sensors();
   read_gps();
   sendThing();
-  delay(1000);
+  delay(5000);
 }
 
 void read_sensors()
