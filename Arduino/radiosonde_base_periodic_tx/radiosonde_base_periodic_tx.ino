@@ -7,11 +7,6 @@
 #include <Adafruit_BMP280.h>
 #include <RadioLib.h>
 
-// Configuration
-#define WIFI_SSID "starlink"
-#define WIFI_PASSWORD "redmondwa"
-#define DEVICE_NAME "Radiosonde"
-
 // Radio and Sensors
 #define RADIO_CS 5
 #define RADIO_SCK 18

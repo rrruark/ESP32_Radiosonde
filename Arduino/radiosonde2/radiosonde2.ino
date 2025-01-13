@@ -8,9 +8,7 @@
 #include <RadioLib.h>
 
 // Configuration
-#define WIFI_SSID "starlink"
-#define WIFI_PASSWORD "redmondwa"
-#define DEVICE_NAME "Radiosonde"
+#define TX_INTERVAL_SECONDS 2
 
 // Radio and Sensors
 #define RADIO_CS 5
@@ -38,8 +36,9 @@ struct __attribute__((packed)) SensorData
   float height_ft;
   float pressure_altitude_ft;
   int8_t temperature_c;
+  uint16_t index;
   uint8_t relative_humidity_pct;
-  uint16_t battery_voltage_max10;
+  //uint16_t battery_voltage_max10;
 };
 
 SensorData sensorData;
@@ -53,36 +52,6 @@ void checkState(int16_t state)
     {
     }
   }
-}
-
-void setupWiFi()
-{
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(1000);
-    Serial.println("Connecting to WiFi...");
-  }
-  Serial.println("WiFi connected.");
-}
-
-void setupOTA()
-{
-  ArduinoOTA.setHostname(DEVICE_NAME);
-  ArduinoOTA.onStart([]()
-  {
-    Serial.println("OTA Update Started");
-  });
-  ArduinoOTA.onEnd([]()
-  {
-    Serial.println("\nOTA Update Completed");
-  });
-  ArduinoOTA.onError([](ota_error_t error)
-  {
-    Serial.printf("OTA Error[%u]: ", error);
-  });
-  ArduinoOTA.begin();
-  Serial.println("OTA ready.");
 }
 
 void readSensors()
@@ -149,7 +118,7 @@ void readGPS()
     }
   }
 }
-int counter=0;
+
 void parseGNGGA(String gngga)
 {
   int commaIndex = 0;
@@ -178,55 +147,23 @@ void parseGNGGA(String gngga)
     sensorData.longitude_deg = NAN;
     sensorData.height_ft = NAN;
   }
-  sensorData.latitude_deg = 30;
-  sensorData.longitude_deg = 60;
-  sensorData.height_ft = 1500 + counter;
-  counter++;
 }
 
 void transmitData()
 {
-  if (sensorData.height_ft <= 5000)
-  {
-    digitalWrite(LED1, HIGH);
-  }
-  else
-  {
-    digitalWrite(LED1, LOW);
-  }
-
+  digitalWrite(LED1, HIGH);
   int16_t state = radio.transmit((uint8_t *)&sensorData, sizeof(sensorData));
   digitalWrite(LED1, LOW);
 
   if (state == RADIOLIB_ERR_NONE)
   {
     Serial.println("[radio] Transmission success.");
+    sensorData.index++;
   }
   else
   {
     Serial.printf("[radio] Transmission failed with code %d\n", state);
   }
-}
-
-void deepSleepSchedule()
-{
-  uint32_t sleepTime;
-
-  if (sensorData.height_ft <= 5000)
-  {
-    sleepTime = 10 * 1000000UL;
-  }
-  else if (sensorData.height_ft <= 9999)
-  {
-    sleepTime = 30 * 1000000UL;
-  }
-  else
-  {
-    sleepTime = 60 * 1000000UL;
-  }
-
-  Serial.printf("Sleeping for %d seconds...\n", sleepTime / 1000000UL);
-  esp_deep_sleep(sleepTime);
 }
 
 void setup()
@@ -261,20 +198,32 @@ void setup()
   }
 
   // Initialize Radio
-  checkState(radio.begin(915.0, 250.0, 9, 7, 0x2B, 8, 16, 0, 1));
+  checkState(radio.begin(915.0, 250.0, 9, 7, 0x2B, 22, 16, 0, 1));
 
   // Initialize WiFi and OTA
-  setupWiFi();
-  setupOTA();
+  //setupWiFi();
+  //setupOTA();
+  sensorData.index = 0;
+  //Power savings
+  WiFi.mode(WIFI_OFF);
+  btStop();
 }
 
+int counter=0;
 void loop()
 {
-  ArduinoOTA.handle();
+  
   readGPS();
   readSensors();
-  Serial.println(sensorData.height_ft);
-  transmitData();
-  delay(100);
-  //deepSleepSchedule();
+  //transmitData();
+  counter++;
+  if(counter>(TX_INTERVAL_SECONDS*2-1))
+  {
+    transmitData();
+    counter=0;
+  }
+
+  delay(500);
+  //esp_sleep_enable_timer_wakeup(500 * 1000);
+  //esp_light_sleep_start();
 }
