@@ -1,3 +1,9 @@
+//Radiosonde
+//2024 Robert Ruark
+
+//Select "ESP32 Dev Module" in Arduino. Why their abstraction addicted devs 
+//don't allow one to select the actual module name is beyond me.
+
 #include <SPI.h>
 #include <Wire.h>
 #include <WiFi.h>
@@ -6,6 +12,8 @@
 #include <Adafruit_SHT4x.h>
 #include <Adafruit_BMP280.h>
 #include <RadioLib.h>
+#include <WiFi.h>
+#include <esp_wifi.h>
 
 // Configuration
 #define TX_INTERVAL_SECONDS 2
@@ -117,6 +125,20 @@ void readGPS()
       gnggaStarted = false;
     }
   }
+}
+
+uint8_t readID()
+{
+  uint8_t baseMac[6];
+  esp_err_t ret = esp_wifi_get_mac(WIFI_IF_STA, baseMac);
+  if (ret == ESP_OK) 
+  {
+    return baseMac[5];
+  } else 
+  {
+    Serial.println("Failed to read MAC address");
+    return 255;
+  } 
 }
 
 void parseGNGGA(String gngga)

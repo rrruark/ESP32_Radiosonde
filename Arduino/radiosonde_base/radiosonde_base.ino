@@ -1,3 +1,9 @@
+//Radiosonde Base
+//Robert Ruark 2024
+
+//Select "ESP32 Dev Module" in Arduino. Why their abstraction addicted devs 
+//don't allow one to select the actual module name is beyond me.
+
 //interrupt driven rx
 #include <SPI.h>
 #include <Wire.h>
