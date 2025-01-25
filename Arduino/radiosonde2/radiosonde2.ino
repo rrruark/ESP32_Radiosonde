@@ -44,7 +44,7 @@ struct __attribute__((packed)) SensorData
   float height_ft;
   float pressure_altitude_ft;
   int8_t temperature_c;
-  uint16_t index;
+  float time;
   uint8_t relative_humidity_pct;
   //uint16_t battery_voltage_max10;
 };
@@ -159,6 +159,7 @@ void parseGNGGA(String gngga)
   // Extract latitude, longitude, and altitude
   if (fields[2].length() > 0 && fields[4].length() > 0)
   {
+    sensorData.time = fields[1].toFloat();
     sensorData.latitude_deg = fields[2].toFloat() / 100.0;  // Convert to decimal degrees
     sensorData.longitude_deg = fields[4].toFloat() / 100.0;
     sensorData.height_ft = fields[9].toFloat() * 3.28084;  // Convert meters to feet
@@ -180,7 +181,6 @@ void transmitData()
   if (state == RADIOLIB_ERR_NONE)
   {
     Serial.println("[radio] Transmission success.");
-    sensorData.index++;
   }
   else
   {
@@ -225,7 +225,6 @@ void setup()
   // Initialize WiFi and OTA
   //setupWiFi();
   //setupOTA();
-  sensorData.index = 0;
   //Power savings
   WiFi.mode(WIFI_OFF);
   btStop();

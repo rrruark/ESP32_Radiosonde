@@ -64,7 +64,7 @@ struct __attribute__((packed)) SensorData
   float height_ft;
   float pressure_altitude_ft;
   int8_t temperature_c;
-  uint16_t index;
+  float time;
   uint8_t relative_humidity_pct;
   //uint16_t battery_voltage_max10;
 };
@@ -198,7 +198,7 @@ void radio_rx(int verbosity)
 
 void print_csv()
 {
-  Serial.print(sensorData.index);
+  Serial.print(sensorData.time,6);
   Serial.print(",");
   Serial.print(sensorData.latitude_deg);
   Serial.print(",");
@@ -221,7 +221,7 @@ void print_csv()
 
 void print_thermal()
 {
-  Serial2.print(sensorData.index);
+  Serial2.print(sensorData.time);
   Serial2.print(",");
   Serial2.print(sensorData.latitude_deg,4);
   Serial2.print(",");
@@ -245,7 +245,7 @@ void print_thermal()
 void print_thermal_header()
 {
   Serial2.println("Radiosonde Ground Station");
-  Serial2.print("index");
+  Serial2.print("time");
   Serial2.print(",");
   Serial2.print("lat");
   Serial2.print(",");
@@ -302,8 +302,13 @@ void OLED_display()
   display.setCursor(0, 0);
   display.println("Radiosonde GS");
   display.setCursor(0, 8);
-  display.print("Packet Index: ");
-  display.print(sensorData.index);
+  display.print("Time: ");
+  display.print(((int)sensorData.time)/10000,0);
+  display.print(":");
+  display.print((((int)sensorData.time)%10000)/100,0);
+  display.print(":");
+  display.print((((int)sensorData.time)%100),0);
+  display.print("UTC");
   display.setCursor(0, 16);
   display.print("Pos: ");
   display.print(sensorData.latitude_deg,4);
